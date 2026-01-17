@@ -5,8 +5,11 @@
 
 .section .text
 .global _start
-.include "syscalls.inc"
 .include "utils.inc"
+
+.equ SYS_exit, 60
+.equ SYS_write, 1
+.equ SYS_chmod, 90
 
 _start:
     mov (%rsp), %rdi
@@ -28,15 +31,18 @@ _start:
 
     mov %r13, %rdi
     mov %rax, %rsi
-    call sys_chmod
+    mov $SYS_chmod, %eax
+    syscall
     test %rax, %rax
     js .L_fail
-    xor %rdi, %rdi
-    call sys_exit
+    xor %edi, %edi
+    mov $SYS_exit, %eax
+    syscall
 
 .L_fail:
-    mov $1, %rdi
-    call sys_exit
+    mov $1, %edi
+    mov $SYS_exit, %eax
+    syscall
 
 .L_parse_octal:
     xor %rax, %rax
@@ -68,9 +74,11 @@ _start:
     ret
 
 .L_usage_err:
-    mov $2, %rdi
+    mov $2, %edi
     lea .L_usage_str(%rip), %rsi
     mov $L_usage_len, %rdx
-    call sys_write
-    mov $1, %rdi
-    call sys_exit
+    mov $SYS_write, %eax
+    syscall
+    mov $1, %edi
+    mov $SYS_exit, %eax
+    syscall

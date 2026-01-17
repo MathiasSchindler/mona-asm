@@ -9,8 +9,13 @@
 
 .section .text
 .global _start
-.include "syscalls.inc"
 .include "utils.inc"
+
+.equ SYS_exit, 60
+.equ SYS_write, 1
+.equ SYS_openat, 257
+.equ SYS_close, 3
+.equ SYS_read, 0
 
 _start:
     mov (%rsp), %rdi
@@ -29,7 +34,8 @@ _start:
     mov %r12, %rsi
     xor %rdx, %rdx
     xor %r10, %r10
-    call sys_openat
+    mov $SYS_openat, %eax
+    syscall
     test %rax, %rax
     js .L_fail
     mov %rax, %r14
@@ -38,7 +44,8 @@ _start:
     mov %r13, %rsi
     mov $577, %rdx
     mov $0666, %r10
-    call sys_openat
+    mov $SYS_openat, %eax
+    syscall
     test %rax, %rax
     js .L_fail_close_src
     mov %rax, %r15
@@ -47,7 +54,8 @@ _start:
     lea .L_buf(%rip), %rsi
     mov $4096, %rdx
     mov %r14, %rdi
-    call sys_read
+    mov $SYS_read, %eax
+    syscall
     test %rax, %rax
     js .L_fail_close
     cmp $0, %rax
@@ -59,7 +67,8 @@ _start:
 
 .L_write:
     mov %r15, %rdi
-    call sys_write
+    mov $SYS_write, %eax
+    syscall
     test %rax, %rax
     js .L_fail_close
     cmp %rax, %rdx
@@ -70,26 +79,34 @@ _start:
 
 .L_done:
     mov %r15, %rdi
-    call sys_close
+    mov $SYS_close, %eax
+    syscall
     mov %r14, %rdi
-    call sys_close
-    xor %rdi, %rdi
-    call sys_exit
+    mov $SYS_close, %eax
+    syscall
+    xor %edi, %edi
+    mov $SYS_exit, %eax
+    syscall
 
 .L_fail_close:
     mov %r15, %rdi
-    call sys_close
+    mov $SYS_close, %eax
+    syscall
 .L_fail_close_src:
     mov %r14, %rdi
-    call sys_close
+    mov $SYS_close, %eax
+    syscall
 .L_fail:
-    mov $1, %rdi
-    call sys_exit
+    mov $1, %edi
+    mov $SYS_exit, %eax
+    syscall
 
 .L_usage_err:
-    mov $2, %rdi
+    mov $2, %edi
     lea .L_usage_str(%rip), %rsi
     mov $L_usage_len, %rdx
-    call sys_write
-    mov $1, %rdi
-    call sys_exit
+    mov $SYS_write, %eax
+    syscall
+    mov $1, %edi
+    mov $SYS_exit, %eax
+    syscall
