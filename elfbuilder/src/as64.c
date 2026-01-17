@@ -520,12 +520,28 @@ static void emit_u32(Buf *out, uint32_t v) {
     buf_append(out, (uint8_t *)&v, 4);
 }
 
+static void emit_u64(Buf *out, uint64_t v) {
+    buf_append(out, (uint8_t *)&v, 8);
+}
+
 static void emit_i32(Buf *out, int32_t v) {
     buf_append(out, (uint8_t *)&v, 4);
 }
 
 static int reg_force_rex8(const Reg *r) {
     return r->size == 8 && r->id >= 4;
+}
+
+static void check_imm8(int64_t v) {
+    if (v < -128 || v > 255) die("imm8 out of range");
+}
+
+static void check_imm8s(int64_t v) {
+    if (v < -128 || v > 127) die("imm8 out of range");
+}
+
+static void check_imm32(int64_t v) {
+    if (v < INT32_MIN || v > UINT32_MAX) die("imm32 out of range");
 }
 
 static void emit_rex(Buf *out, int w, int r, int x, int b, int force) {
@@ -725,31 +741,48 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
 
     if (strcmp(mn, "call") == 0 || strcmp(mn, "jmp") == 0 || mn[0] == 'j') {
         uint8_t op1 = 0, op2 = 0;
+        uint8_t short_op = 0;
         int is_jcc = 0;
         if (strcmp(mn, "call") == 0) {
             op1 = 0xE8;
         } else if (strcmp(mn, "jmp") == 0) {
             op1 = 0xE9;
+            short_op = 0xEB;
         } else {
             is_jcc = 1;
             op1 = 0x0F;
-            if (strcmp(mn, "je") == 0) op2 = 0x84;
-            else if (strcmp(mn, "jne") == 0) op2 = 0x85;
-            else if (strcmp(mn, "jl") == 0) op2 = 0x8C;
-            else if (strcmp(mn, "jge") == 0) op2 = 0x8D;
-            else if (strcmp(mn, "jle") == 0) op2 = 0x8E;
-            else if (strcmp(mn, "jb") == 0) op2 = 0x82;
-            else if (strcmp(mn, "ja") == 0) op2 = 0x87;
-            else if (strcmp(mn, "jbe") == 0) op2 = 0x86;
-            else if (strcmp(mn, "js") == 0) op2 = 0x88;
+            if (strcmp(mn, "je") == 0) { op2 = 0x84; short_op = 0x74; }
+            else if (strcmp(mn, "jne") == 0) { op2 = 0x85; short_op = 0x75; }
+            else if (strcmp(mn, "jl") == 0) { op2 = 0x8C; short_op = 0x7C; }
+            else if (strcmp(mn, "jge") == 0) { op2 = 0x8D; short_op = 0x7D; }
+            else if (strcmp(mn, "jle") == 0) { op2 = 0x8E; short_op = 0x7E; }
+            else if (strcmp(mn, "jb") == 0) { op2 = 0x82; short_op = 0x72; }
+            else if (strcmp(mn, "ja") == 0) { op2 = 0x87; short_op = 0x77; }
+            else if (strcmp(mn, "jbe") == 0) { op2 = 0x86; short_op = 0x76; }
+            else if (strcmp(mn, "js") == 0) { op2 = 0x88; short_op = 0x78; }
             else die("unsupported jump");
         }
 
         if (!ops_str || !*ops_str) die("missing branch target");
-        int idx = 0;
-        if (relocs) {
-            idx = sym_find(syms, ops_str);
-            if (idx < 0) die("unknown branch target");
+
+        int idx = sym_find(syms, ops_str);
+        int can_rel8 = 0;
+        int32_t rel8 = 0;
+        if (idx >= 0 && syms->data[idx].type == MOBJ_SYM_TEXT && (sec == SEC_TEXT)) {
+            size_t cur = out->len;
+            size_t next = cur + (is_jcc ? 2 : (strcmp(mn, "jmp") == 0 ? 2 : 5));
+            int32_t disp = (int32_t)syms->data[idx].value - (int32_t)next;
+            if (disp >= -128 && disp <= 127 && (is_jcc || strcmp(mn, "jmp") == 0)) {
+                can_rel8 = 1;
+                rel8 = disp;
+            }
+        }
+
+        if (can_rel8) {
+            emit_u8(out, short_op);
+            emit_u8(out, (uint8_t)rel8);
+            free(work);
+            return;
         }
 
         if (is_jcc) {
@@ -758,9 +791,19 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
         } else {
             emit_u8(out, op1);
         }
+
         uint32_t disp_off = (uint32_t)out->len;
-        emit_u32(out, 0);
-        if (relocs) add_reloc(relocs, disp_off, (uint32_t)idx, 0, sec);
+        if (idx >= 0 && syms->data[idx].type == MOBJ_SYM_TEXT && (sec == SEC_TEXT)) {
+            size_t next = out->len + 4;
+            int32_t disp = (int32_t)syms->data[idx].value - (int32_t)next;
+            emit_i32(out, disp);
+        } else {
+            emit_u32(out, 0);
+            if (relocs) {
+                if (idx < 0) die("unknown branch target");
+                add_reloc(relocs, disp_off, (uint32_t)idx, 0, sec);
+            }
+        }
         free(work);
         return;
     }
@@ -787,10 +830,54 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
                 if (syms->data[idx].type != MOBJ_SYM_ABS) die("only ABS immediate supported");
                 o1.imm = syms->data[idx].value;
             }
+            if (o2.kind == OP_REG) {
+                if (size == 8) {
+                    check_imm8(o1.imm);
+                    int rex_b = (o2.reg.id >> 3) & 1;
+                    int force = reg_force_rex8(&o2.reg);
+                    emit_rex(out, 0, 0, 0, rex_b, force);
+                    emit_u8(out, (uint8_t)(0xB0 + (o2.reg.id & 7)));
+                    emit_u8(out, (uint8_t)o1.imm);
+                    free(work);
+                    return;
+                }
+                if (size == 32) {
+                    check_imm32(o1.imm);
+                    int rex_b = (o2.reg.id >> 3) & 1;
+                    emit_rex(out, 0, 0, 0, rex_b, 0);
+                    emit_u8(out, (uint8_t)(0xB8 + (o2.reg.id & 7)));
+                    emit_u32(out, (uint32_t)o1.imm);
+                    free(work);
+                    return;
+                }
+                if (size == 64) {
+                    int rex_b = (o2.reg.id >> 3) & 1;
+                    if (o1.imm >= 0 && o1.imm <= UINT32_MAX) {
+                        emit_rex(out, 0, 0, 0, rex_b, 0);
+                        emit_u8(out, (uint8_t)(0xB8 + (o2.reg.id & 7)));
+                        emit_u32(out, (uint32_t)o1.imm);
+                        free(work);
+                        return;
+                    }
+                    if (o1.imm >= INT32_MIN && o1.imm <= INT32_MAX) {
+                        emit_op_digit_rm(out, 0xC7, 0, &o2, 1, relocs, syms, sec, 0);
+                        emit_u32(out, (uint32_t)o1.imm);
+                        free(work);
+                        return;
+                    }
+                    emit_rex(out, 1, 0, 0, rex_b, 0);
+                    emit_u8(out, (uint8_t)(0xB8 + (o2.reg.id & 7)));
+                    emit_u64(out, (uint64_t)o1.imm);
+                    free(work);
+                    return;
+                }
+            }
             if (size == 8) {
+                check_imm8(o1.imm);
                 emit_op_digit_rm(out, 0xC6, 0, &o2, 0, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
             } else {
+                check_imm32(o1.imm);
                 int w = (size == 64);
                 emit_op_digit_rm(out, 0xC7, 0, &o2, w, relocs, syms, sec, 0);
                 emit_u32(out, (uint32_t)o1.imm);
@@ -875,8 +962,19 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
 
     if (strcmp(mn, "cmp") == 0) {
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
-            emit_op_digit_rm(out, 0x81, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-            emit_u32(out, (uint32_t)o1.imm);
+            if (o2.reg.size == 8) {
+                check_imm8(o1.imm);
+                emit_op_digit_rm(out, 0x80, 7, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                check_imm32(o1.imm);
+                emit_op_digit_rm(out, 0x81, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u32(out, (uint32_t)o1.imm);
+            }
             free(work);
             return;
         }
@@ -910,9 +1008,15 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
     if (strcmp(mn, "add") == 0) {
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
             if (o2.reg.size == 8) {
+                check_imm8(o1.imm);
                 emit_op_digit_rm(out, 0x80, 0, &o2, 0, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
+            } else if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
             } else {
+                check_imm32(o1.imm);
                 emit_op_digit_rm(out, 0x81, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
                 emit_u32(out, (uint32_t)o1.imm);
             }
@@ -933,8 +1037,19 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
             return;
         }
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
-            emit_op_digit_rm(out, 0x81, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-            emit_u32(out, (uint32_t)o1.imm);
+            if (o2.reg.size == 8) {
+                check_imm8(o1.imm);
+                emit_op_digit_rm(out, 0x80, 5, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                check_imm32(o1.imm);
+                emit_op_digit_rm(out, 0x81, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u32(out, (uint32_t)o1.imm);
+            }
             free(work);
             return;
         }
@@ -942,8 +1057,19 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
 
     if (strcmp(mn, "and") == 0) {
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
-            emit_op_digit_rm(out, 0x81, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-            emit_u32(out, (uint32_t)o1.imm);
+            if (o2.reg.size == 8) {
+                check_imm8(o1.imm);
+                emit_op_digit_rm(out, 0x80, 4, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                check_imm32(o1.imm);
+                emit_op_digit_rm(out, 0x81, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u32(out, (uint32_t)o1.imm);
+            }
             free(work);
             return;
         }

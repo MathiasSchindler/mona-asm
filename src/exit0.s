@@ -1,7 +1,9 @@
 .section .text
 .global _start
-.include "syscalls.inc"
+
+.equ SYS_exit, 60
 
 _start:
-    xor %rdi, %rdi
-    call sys_exit
+    xor %edi, %edi
+    mov $SYS_exit, %eax
+    syscall
