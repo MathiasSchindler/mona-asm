@@ -4,13 +4,15 @@ CFLAGS := -std=c11 -Wall -Wextra -Werror -O2 -Iinclude
 BUILD := build
 BIN := $(BUILD)/as64 $(BUILD)/ld64
 
+AS64_SRCS := src/as64.c src/as64_base.c src/as64_emit.c src/as64_pass.c
+
 all: $(BIN)
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/as64: src/as64.c | $(BUILD)
-	$(CC) $(CFLAGS) -o $@ $<
+$(BUILD)/as64: $(AS64_SRCS) | $(BUILD)
+	$(CC) $(CFLAGS) -o $@ $(AS64_SRCS)
 
 $(BUILD)/ld64: src/ld64.c | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ $<
