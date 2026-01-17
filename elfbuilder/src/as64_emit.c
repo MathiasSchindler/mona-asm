@@ -308,9 +308,10 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
     if (op_count >= 2 && !parse_operand(ops[1], &o2)) die("invalid operand");
     if (op_count >= 3 && !parse_operand(ops[2], &o3)) die("invalid operand");
 
-    if (strcmp(mn, "mov") == 0 || strcmp(mn, "movb") == 0) {
+    if (strcmp(mn, "mov") == 0 || strcmp(mn, "movb") == 0 || strcmp(mn, "movq") == 0) {
         int size = 0;
         if (strcmp(mn, "movb") == 0) size = 8;
+        if (strcmp(mn, "movq") == 0) size = 64;
         if (o2.kind == OP_REG) size = o2.reg.size;
         if (o1.kind == OP_REG) size = o1.reg.size;
         if (size == 0) die("unable to infer mov size");

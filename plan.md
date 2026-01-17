@@ -37,11 +37,11 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 ## Current status snapshot (Jan 2026)
 
 - Coreutils: Stages 0–9 complete for the current tool set.
+- Tools implemented through Stage 21 (see below).
 - elfbuilder: `as64` + `ld64` exist as dependency-free C tools and can build all current coreutils.
-- Stage 9 is done.
-- Stage 11–12 are effectively done in C (elfbuilder MVP).
-- Stage 13 is in progress (instruction/dir support expanding as needed).
-- Stage 14 is partially done for the current tool set (elfbuilder builds all existing tools).
+- Stage 11–12 are done in C (elfbuilder MVP).
+- Stage 13 is in progress (instruction support expanding as needed).
+- Stage 14 is in progress (elfbuilder builds all existing tools).
 
 ### Stage 0 — Toolchain baseline
 **Goal:** establish a known-good build/run path.
@@ -272,31 +272,6 @@ Status: not started.
 
 ---
 
-## Next coreutils candidates (low-risk order)
-
-1. `chown` (numeric uid:gid, single file)
-2. `date` (epoch seconds only)
-3. `sleep` (integer seconds)
-4. `basename`
-5. `dirname`
-6. `yes`
-7. `uname`
-8. `whoami`
-9. `id`
-10. `mktemp`
-11. `truncate`
-12. `seq`
-13. `printf`
-14. `tee`
-15. `tr`
-16. `sort`
-17. `uniq`
-18. `cut`
-19. `paste`
-20. `od`
-
----
-
 ## New milestones (Stage 16+)
 
 ### Stage 16 — Basic filesystem mutation
@@ -347,7 +322,7 @@ Status: done.
 - `chmod` changes mode as expected.
 - `chown` works for numeric uid:gid (or exits 1 if not permitted).
 
-Status: not started.
+Status: `du`/`chmod` done; `chown` not started.
 
 ### Stage 20 — Time + sleep
 **Tools:** `date` (epoch seconds), `sleep` (integer seconds)
@@ -356,4 +331,29 @@ Status: not started.
 - `date` prints digits only and changes over time.
 - `sleep 1` delays approximately one second.
 
-Status: not started.
+Status: `date` done; `sleep` not started.
+
+### Stage 21 — Text processing
+**Tools:** `seq`, `yes`, `printf`, `sort`, `uniq`, `cut`, `tr`, `tee`, `od`, `whoami`
+
+**Test:**
+- `seq` prints expected ranges.
+- `yes`/`printf` minimal feature checks.
+- `sort`/`uniq`/`cut` basic stdin behavior.
+- `tr` translates/deletes bytes; `tee` mirrors output; `od` prints octal bytes.
+
+Status: done.
+
+---
+
+## Next coreutils candidates (low-risk order)
+
+1. `chown` (numeric uid:gid, single file)
+2. `sleep` (integer seconds)
+3. `basename`
+4. `dirname`
+5. `uname`
+6. `id`
+7. `mktemp`
+8. `truncate`
+9. `paste`

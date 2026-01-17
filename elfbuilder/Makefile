@@ -84,6 +84,14 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/od.mobj -o $(BUILD)/tools/od
 	$(BUILD)/as64 ../src/tee.s -o $(BUILD)/tools/tee.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/tee.mobj -o $(BUILD)/tools/tee
+	$(BUILD)/as64 ../src/sleep.s -o $(BUILD)/tools/sleep.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/sleep.mobj -o $(BUILD)/tools/sleep
+	$(BUILD)/as64 ../src/basename.s -o $(BUILD)/tools/basename.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/basename.mobj -o $(BUILD)/tools/basename
+	$(BUILD)/as64 ../src/dirname.s -o $(BUILD)/tools/dirname.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/dirname.mobj -o $(BUILD)/tools/dirname
+	$(BUILD)/as64 ../src/uname.s -o $(BUILD)/tools/uname.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/uname.mobj -o $(BUILD)/tools/uname
 
 size: test
 	@echo "Sizes (bytes):"

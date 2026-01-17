@@ -18,6 +18,8 @@
 .equ SYS_chown, 92
 .equ SYS_clock_gettime, 228
 .equ SYS_getuid, 102
+.equ SYS_nanosleep, 35
+.equ SYS_uname, 63
 
 .global sys_exit
 .global sys_write
@@ -37,6 +39,8 @@
 .global sys_chown
 .global sys_clock_gettime
 .global sys_getuid
+.global sys_nanosleep
+.global sys_uname
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -125,5 +129,15 @@ sys_clock_gettime:
 
 sys_getuid:
     mov $SYS_getuid, %rax
+    syscall
+    ret
+
+sys_nanosleep:
+    mov $SYS_nanosleep, %rax
+    syscall
+    ret
+
+sys_uname:
+    mov $SYS_uname, %rax
     syscall
     ret

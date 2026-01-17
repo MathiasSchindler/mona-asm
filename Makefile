@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut tr od tee
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut tr od tee sleep basename dirname uname
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -296,6 +296,27 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "tee ok"
+	@$(BUILD_DIR)/sleep 0; status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "sleep failed: $$status"; \
+		exit 1; \
+	fi; \
+	echo "sleep ok"
+	@out="$$( $(BUILD_DIR)/basename /usr/bin/ )"; \
+	if [ "$$out" != "bin" ]; then \
+		echo "basename failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "basename ok"
+	@out="$$( $(BUILD_DIR)/dirname /usr/bin/ )"; \
+	if [ "$$out" != "/usr" ]; then \
+		echo "dirname failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "dirname ok"
+	@out="$$( $(BUILD_DIR)/uname )"; \
+	printf '%s' "$$out" | grep -Eq '^[A-Za-z]+' || { echo "uname failed: $$out"; exit 1; }; \
+	echo "uname ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

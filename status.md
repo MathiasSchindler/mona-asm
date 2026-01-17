@@ -21,9 +21,23 @@
 | cp | 18 | done | Copy single file to file (no dirs). |
 | mv | 18 | done | Rename single file (same filesystem). |
 | ln | 18 | done | Create hard link (no -s). |
+| du | 19 | done | Print file size in bytes (single file). |
+| chmod | 19 | done | Set mode from octal (single file). |
+| date | 20 | done | Prints epoch seconds (no flags). |
+| seq | 20 | done | Print integer sequences (1 or 2 args). |
+| whoami | 20 | done | Prints username from /etc/passwd or numeric UID. |
+| yes | 20 | done | Repeats args (or y); supports `-n`. |
+| printf | 20 | done | Minimal printf with common specifiers and escapes. |
+| sort | 20 | done | Sort stdin lines (buffered). |
+| uniq | 20 | done | Collapse consecutive duplicate lines (stdin). |
+| cut | 20 | done | Extract field by delimiter; supports `-d` and `-f`. |
+| tr | 20 | done | Translate or delete bytes; supports `-d`. |
+| od | 20 | done | Print bytes in octal (space-separated). |
+| tee | 20 | done | Copy stdin to stdout and files. |
 
 Stage 9 (common library extraction) is done.
-Stage 16–18 tools are done.
+Stage 16–20 tools listed above are done.
+elfbuilder: as64/ld64 build all current tools; instruction coverage expanded as needed.
 
 ## Shared utilities
 
