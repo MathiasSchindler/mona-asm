@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut tr od tee
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -267,6 +267,35 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "cut ok"
+	@out="$$( printf 'abc' | $(BUILD_DIR)/tr a z )"; \
+	if [ "$$out" != "zbc" ]; then \
+		echo "tr failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( printf 'banana' | $(BUILD_DIR)/tr -d a )"; \
+	if [ "$$out" != "bnn" ]; then \
+		echo "tr -d failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "tr ok"
+	@out="$$( printf 'ABC' | $(BUILD_DIR)/od )"; \
+	if [ "$$out" != "101 102 103" ]; then \
+		echo "od failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "od ok"
+	@rm -f $(BUILD_DIR)/tee_test.txt; \
+	out="$$( printf 'hi' | $(BUILD_DIR)/tee $(BUILD_DIR)/tee_test.txt )"; \
+	if [ "$$out" != "hi" ]; then \
+		echo "tee stdout failed: $$out"; \
+		exit 1; \
+	fi; \
+	file_out="$$( cat $(BUILD_DIR)/tee_test.txt )"; \
+	if [ "$$file_out" != "hi" ]; then \
+		echo "tee file failed: $$file_out"; \
+		exit 1; \
+	fi; \
+	echo "tee ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

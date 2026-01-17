@@ -447,7 +447,8 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
     if (strcmp(mn, "xor") == 0) {
         if (o1.kind != OP_REG || o2.kind != OP_REG) die("xor expects reg, reg");
         if (o1.reg.id != o2.reg.id) die("xor only supports reg, same reg");
-        emit_op_reg_rm(out, 0x31, &o1.reg, &o2, o1.reg.size == 64, relocs, syms, sec, 0);
+        int w = 0;
+        emit_op_reg_rm(out, 0x31, &o1.reg, &o2, w, relocs, syms, sec, 0);
         free(work);
         return;
     }
@@ -720,9 +721,17 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
             int rex_r = (o3.reg.id >> 3) & 1;
             int rex_b = (o2.reg.id >> 3) & 1;
             emit_rex(out, 1, rex_r, 0, rex_b, 0);
-            emit_u8(out, 0x69);
+            if (o1.imm >= -128 && o1.imm <= 127) {
+                emit_u8(out, 0x6B);
+            } else {
+                emit_u8(out, 0x69);
+            }
             emit_u8(out, (uint8_t)(0xC0 | ((o3.reg.id & 7) << 3) | (o2.reg.id & 7)));
-            emit_u32(out, (uint32_t)o1.imm);
+            if (o1.imm >= -128 && o1.imm <= 127) {
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                emit_u32(out, (uint32_t)o1.imm);
+            }
             free(work);
             return;
         }
@@ -732,8 +741,18 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
             check_imm8(o1.imm);
             if (o2.reg.size == 8) {
+                if (o1.imm == 1) {
+                    emit_op_digit_rm(out, 0xD0, 4, &o2, 0, relocs, syms, sec, 0);
+                    free(work);
+                    return;
+                }
                 emit_op_digit_rm(out, 0xC0, 4, &o2, 0, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
+                free(work);
+                return;
+            }
+            if (o1.imm == 1) {
+                emit_op_digit_rm(out, 0xD1, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
                 free(work);
                 return;
             }
@@ -745,6 +764,38 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
         if (o1.kind == OP_REG && o1.reg.size == 8 && o1.reg.id == 1 && o2.kind == OP_REG) {
             uint8_t op = (o2.reg.size == 8) ? 0xD2 : 0xD3;
             emit_op_digit_rm(out, op, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+            free(work);
+            return;
+        }
+    }
+
+    if (strcmp(mn, "shr") == 0) {
+        if (o1.kind == OP_IMM && o2.kind == OP_REG) {
+            check_imm8(o1.imm);
+            if (o2.reg.size == 8) {
+                if (o1.imm == 1) {
+                    emit_op_digit_rm(out, 0xD0, 5, &o2, 0, relocs, syms, sec, 0);
+                    free(work);
+                    return;
+                }
+                emit_op_digit_rm(out, 0xC0, 5, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+                free(work);
+                return;
+            }
+            if (o1.imm == 1) {
+                emit_op_digit_rm(out, 0xD1, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                free(work);
+                return;
+            }
+            emit_op_digit_rm(out, 0xC1, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+            emit_u8(out, (uint8_t)o1.imm);
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_REG && o1.reg.size == 8 && o1.reg.id == 1 && o2.kind == OP_REG) {
+            uint8_t op = (o2.reg.size == 8) ? 0xD2 : 0xD3;
+            emit_op_digit_rm(out, op, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
             free(work);
             return;
         }
