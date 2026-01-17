@@ -960,19 +960,69 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
         return;
     }
 
+    if (strcmp(mn, "cmpb") == 0) {
+        if (o1.kind == OP_IMM && (o2.kind == OP_REG || o2.kind == OP_MEM)) {
+            check_imm8(o1.imm);
+            emit_op_digit_rm(out, 0x80, 7, &o2, 0, relocs, syms, sec, 0);
+            emit_u8(out, (uint8_t)o1.imm);
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_REG && (o2.kind == OP_REG || o2.kind == OP_MEM)) {
+            emit_op_reg_rm(out, 0x38, &o1.reg, &o2, 0, relocs, syms, sec, 0);
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_MEM && o2.kind == OP_REG) {
+            emit_op_reg_rm(out, 0x3A, &o2.reg, &o1, 0, relocs, syms, sec, 0);
+            free(work);
+            return;
+        }
+    }
+
     if (strcmp(mn, "cmp") == 0) {
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
+            if (o1.imm == 0) {
+                uint8_t op = (o2.reg.size == 8) ? 0x84 : 0x85;
+                emit_op_reg_rm(out, op, &o2.reg, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                free(work);
+                return;
+            }
             if (o2.reg.size == 8) {
                 check_imm8(o1.imm);
-                emit_op_digit_rm(out, 0x80, 7, &o2, 0, relocs, syms, sec, 0);
-                emit_u8(out, (uint8_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    emit_u8(out, 0x3C);
+                    emit_u8(out, (uint8_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x80, 7, &o2, 0, relocs, syms, sec, 0);
+                    emit_u8(out, (uint8_t)o1.imm);
+                }
             } else if (o1.imm >= -128 && o1.imm <= 127) {
                 check_imm8s(o1.imm);
                 emit_op_digit_rm(out, 0x83, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
             } else {
                 check_imm32(o1.imm);
-                emit_op_digit_rm(out, 0x81, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0x3D);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x81, 7, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
+            }
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_IMM && o2.kind == OP_MEM) {
+            if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 7, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                check_imm32(o1.imm);
+                emit_op_digit_rm(out, 0x81, 7, &o2, 0, relocs, syms, sec, 0);
                 emit_u32(out, (uint32_t)o1.imm);
             }
             free(work);
@@ -988,12 +1038,31 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
     if (strcmp(mn, "test") == 0) {
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
             if (o2.reg.size == 8) {
-                emit_op_digit_rm(out, 0xF6, 0, &o2, 0, relocs, syms, sec, 0);
-                emit_u8(out, (uint8_t)o1.imm);
+                check_imm8(o1.imm);
+                if (o2.reg.id == 0) {
+                    emit_u8(out, 0xA8);
+                    emit_u8(out, (uint8_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0xF6, 0, &o2, 0, relocs, syms, sec, 0);
+                    emit_u8(out, (uint8_t)o1.imm);
+                }
             } else {
                 emit_op_digit_rm(out, 0xF7, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-                emit_u32(out, (uint32_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0xA9);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
             }
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_IMM && o2.kind == OP_MEM) {
+            check_imm32(o1.imm);
+            emit_op_digit_rm(out, 0xF7, 0, &o2, 0, relocs, syms, sec, 0);
+            emit_u32(out, (uint32_t)o1.imm);
             free(work);
             return;
         }
@@ -1009,16 +1078,27 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
             if (o2.reg.size == 8) {
                 check_imm8(o1.imm);
-                emit_op_digit_rm(out, 0x80, 0, &o2, 0, relocs, syms, sec, 0);
-                emit_u8(out, (uint8_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    emit_u8(out, 0x04);
+                    emit_u8(out, (uint8_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x80, 0, &o2, 0, relocs, syms, sec, 0);
+                    emit_u8(out, (uint8_t)o1.imm);
+                }
             } else if (o1.imm >= -128 && o1.imm <= 127) {
                 check_imm8s(o1.imm);
                 emit_op_digit_rm(out, 0x83, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
             } else {
                 check_imm32(o1.imm);
-                emit_op_digit_rm(out, 0x81, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-                emit_u32(out, (uint32_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0x05);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x81, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
             }
             free(work);
             return;
@@ -1039,16 +1119,27 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
         if (o1.kind == OP_IMM && o2.kind == OP_REG) {
             if (o2.reg.size == 8) {
                 check_imm8(o1.imm);
-                emit_op_digit_rm(out, 0x80, 5, &o2, 0, relocs, syms, sec, 0);
-                emit_u8(out, (uint8_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    emit_u8(out, 0x2C);
+                    emit_u8(out, (uint8_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x80, 5, &o2, 0, relocs, syms, sec, 0);
+                    emit_u8(out, (uint8_t)o1.imm);
+                }
             } else if (o1.imm >= -128 && o1.imm <= 127) {
                 check_imm8s(o1.imm);
                 emit_op_digit_rm(out, 0x83, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
                 emit_u8(out, (uint8_t)o1.imm);
             } else {
                 check_imm32(o1.imm);
-                emit_op_digit_rm(out, 0x81, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-                emit_u32(out, (uint32_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0x2D);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x81, 5, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
             }
             free(work);
             return;
@@ -1067,8 +1158,14 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
                 emit_u8(out, (uint8_t)o1.imm);
             } else {
                 check_imm32(o1.imm);
-                emit_op_digit_rm(out, 0x81, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
-                emit_u32(out, (uint32_t)o1.imm);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0x25);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x81, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
             }
             free(work);
             return;
@@ -1078,6 +1175,34 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
     if (strcmp(mn, "or") == 0) {
         if (o1.kind == OP_REG && o2.kind == OP_REG) {
             emit_op_reg_rm(out, 0x09, &o1.reg, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+            free(work);
+            return;
+        }
+        if (o1.kind == OP_IMM && o2.kind == OP_REG) {
+            if (o2.reg.size == 8) {
+                check_imm8(o1.imm);
+                if (o2.reg.id == 0) {
+                    emit_u8(out, 0x0C);
+                    emit_u8(out, (uint8_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x80, 1, &o2, 0, relocs, syms, sec, 0);
+                    emit_u8(out, (uint8_t)o1.imm);
+                }
+            } else if (o1.imm >= -128 && o1.imm <= 127) {
+                check_imm8s(o1.imm);
+                emit_op_digit_rm(out, 0x83, 1, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                check_imm32(o1.imm);
+                if (o2.reg.id == 0) {
+                    if (o2.reg.size == 64) emit_rex(out, 1, 0, 0, 0, 0);
+                    emit_u8(out, 0x0D);
+                    emit_u32(out, (uint32_t)o1.imm);
+                } else {
+                    emit_op_digit_rm(out, 0x81, 1, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                    emit_u32(out, (uint32_t)o1.imm);
+                }
+            }
             free(work);
             return;
         }

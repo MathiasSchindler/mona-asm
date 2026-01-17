@@ -177,7 +177,8 @@ static void write_elf(const char *path, Buf *text, Buf *data, uint32_t bss_size,
 
     Elf64_Phdr ph = {0};
     ph.p_type = 1; 
-    ph.p_flags = 7; 
+    if (data->len == 0 && bss_size == 0) ph.p_flags = 5; 
+    else ph.p_flags = 7; 
     ph.p_offset = 0;
     ph.p_vaddr = base;
     ph.p_paddr = base;
