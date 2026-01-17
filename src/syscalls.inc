@@ -20,6 +20,9 @@
 .equ SYS_getuid, 102
 .equ SYS_nanosleep, 35
 .equ SYS_uname, 63
+.equ SYS_fork, 57
+.equ SYS_execve, 59
+.equ SYS_wait4, 61
 
 .global sys_exit
 .global sys_write
@@ -41,6 +44,9 @@
 .global sys_getuid
 .global sys_nanosleep
 .global sys_uname
+.global sys_fork
+.global sys_execve
+.global sys_wait4
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -139,5 +145,20 @@ sys_nanosleep:
 
 sys_uname:
     mov $SYS_uname, %rax
+    syscall
+    ret
+
+sys_fork:
+    mov $SYS_fork, %rax
+    syscall
+    ret
+
+sys_execve:
+    mov $SYS_execve, %rax
+    syscall
+    ret
+
+sys_wait4:
+    mov $SYS_wait4, %rax
     syscall
     ret

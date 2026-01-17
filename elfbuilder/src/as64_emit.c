@@ -232,50 +232,30 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
 
     if (strcmp(mn, "call") == 0 || strcmp(mn, "jmp") == 0 || mn[0] == 'j') {
         uint8_t op1 = 0, op2 = 0;
-        uint8_t short_op = 0;
         int is_jcc = 0;
         if (strcmp(mn, "call") == 0) {
             op1 = 0xE8;
         } else if (strcmp(mn, "jmp") == 0) {
             op1 = 0xE9;
-            short_op = 0xEB;
         } else {
             is_jcc = 1;
             op1 = 0x0F;
-            if (strcmp(mn, "je") == 0) { op2 = 0x84; short_op = 0x74; }
-            else if (strcmp(mn, "jne") == 0) { op2 = 0x85; short_op = 0x75; }
-            else if (strcmp(mn, "jl") == 0) { op2 = 0x8C; short_op = 0x7C; }
-            else if (strcmp(mn, "jge") == 0) { op2 = 0x8D; short_op = 0x7D; }
-            else if (strcmp(mn, "jle") == 0) { op2 = 0x8E; short_op = 0x7E; }
-            else if (strcmp(mn, "jb") == 0) { op2 = 0x82; short_op = 0x72; }
-            else if (strcmp(mn, "ja") == 0) { op2 = 0x87; short_op = 0x77; }
-            else if (strcmp(mn, "jbe") == 0) { op2 = 0x86; short_op = 0x76; }
-            else if (strcmp(mn, "jae") == 0) { op2 = 0x83; short_op = 0x73; }
-            else if (strcmp(mn, "js") == 0) { op2 = 0x88; short_op = 0x78; }
+            if (strcmp(mn, "je") == 0) { op2 = 0x84; }
+            else if (strcmp(mn, "jne") == 0) { op2 = 0x85; }
+            else if (strcmp(mn, "jl") == 0) { op2 = 0x8C; }
+            else if (strcmp(mn, "jge") == 0) { op2 = 0x8D; }
+            else if (strcmp(mn, "jle") == 0) { op2 = 0x8E; }
+            else if (strcmp(mn, "jb") == 0) { op2 = 0x82; }
+            else if (strcmp(mn, "ja") == 0) { op2 = 0x87; }
+            else if (strcmp(mn, "jbe") == 0) { op2 = 0x86; }
+            else if (strcmp(mn, "jae") == 0) { op2 = 0x83; }
+            else if (strcmp(mn, "js") == 0) { op2 = 0x88; }
             else die("unsupported jump");
         }
 
         if (!ops_str || !*ops_str) die("missing branch target");
 
         int idx = sym_find(syms, ops_str);
-        int can_rel8 = 0;
-        int32_t rel8 = 0;
-        if (idx >= 0 && syms->data[idx].type == MOBJ_SYM_TEXT && (sec == SEC_TEXT)) {
-            size_t cur = out->len;
-            size_t next = cur + (is_jcc ? 2 : (strcmp(mn, "jmp") == 0 ? 2 : 5));
-            int32_t disp = (int32_t)syms->data[idx].value - (int32_t)next;
-            if (disp >= -128 && disp <= 127 && (is_jcc || strcmp(mn, "jmp") == 0)) {
-                can_rel8 = 1;
-                rel8 = disp;
-            }
-        }
-
-        if (can_rel8) {
-            emit_u8(out, short_op);
-            emit_u8(out, (uint8_t)rel8);
-            free(work);
-            return;
-        }
 
         if (is_jcc) {
             emit_u8(out, op1);
