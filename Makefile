@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -249,6 +249,24 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "yes ok"
+	@out="$$( printf 'b\na\nc\n' | $(BUILD_DIR)/sort )"; \
+	if [ "$$out" != "$$( printf 'a\nb\nc' )" ]; then \
+		echo "sort failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "sort ok"
+	@out="$$( printf 'a\na\nb\nb\nb\n' | $(BUILD_DIR)/uniq )"; \
+	if [ "$$out" != "$$( printf 'a\nb' )" ]; then \
+		echo "uniq failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "uniq ok"
+	@out="$$( printf 'a:1:x\nb:2:y\n' | $(BUILD_DIR)/cut -d : -f 2 )"; \
+	if [ "$$out" != "$$( printf '1\n2' )" ]; then \
+		echo "cut failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "cut ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

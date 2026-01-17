@@ -729,6 +729,19 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
     }
 
     if (strcmp(mn, "shl") == 0) {
+        if (o1.kind == OP_IMM && o2.kind == OP_REG) {
+            check_imm8(o1.imm);
+            if (o2.reg.size == 8) {
+                emit_op_digit_rm(out, 0xC0, 4, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+                free(work);
+                return;
+            }
+            emit_op_digit_rm(out, 0xC1, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+            emit_u8(out, (uint8_t)o1.imm);
+            free(work);
+            return;
+        }
         if (o1.kind == OP_REG && o1.reg.size == 8 && o1.reg.id == 1 && o2.kind == OP_REG) {
             uint8_t op = (o2.reg.size == 8) ? 0xD2 : 0xD3;
             emit_op_digit_rm(out, op, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);

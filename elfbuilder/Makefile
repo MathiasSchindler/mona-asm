@@ -72,6 +72,12 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/yes.mobj -o $(BUILD)/tools/yes
 	$(BUILD)/as64 ../src/printf.s -o $(BUILD)/tools/printf.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/printf.mobj -o $(BUILD)/tools/printf
+	$(BUILD)/as64 ../src/sort.s -o $(BUILD)/tools/sort.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/sort.mobj -o $(BUILD)/tools/sort
+	$(BUILD)/as64 ../src/uniq.s -o $(BUILD)/tools/uniq.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/uniq.mobj -o $(BUILD)/tools/uniq
+	$(BUILD)/as64 ../src/cut.s -o $(BUILD)/tools/cut.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/cut.mobj -o $(BUILD)/tools/cut
 
 size: test
 	@echo "Sizes (bytes):"
