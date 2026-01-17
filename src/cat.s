@@ -10,20 +10,31 @@
 .section .text
 .global _start
 .include "syscalls.inc"
-.include "utils.inc"
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
-    jne .L_usage
-
-    mov %rcx, %r14
-    mov %r8, %rbx
-    cmp $0, %r14
+    cmp $1, %rdi
     je .L_cat_stdin
+    mov %rdi, %r14
+    dec %r14
+    lea 16(%rsp), %rbx
+
+    mov %r14, %r15
+    mov %rbx, %r13
+.L_check_args:
+    cmp $0, %r15
+    je .L_cat_files
+    mov (%r13), %r8
+    movb (%r8), %al
+    cmp $'-', %al
+    jne .L_check_next
+    movb 1(%r8), %al
+    cmp $0, %al
+    jne .L_usage
+.L_check_next:
+    add $8, %r13
+    dec %r15
+    jmp .L_check_args
 
 .L_cat_files:
     mov (%rbx), %rsi

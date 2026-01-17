@@ -16,23 +16,43 @@
 .section .text
 .global _start
 .include "syscalls.inc"
-.include "utils.inc"
 
 _start:
+    xor %r10, %r10
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    mov $1, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
-    jne .L_usage
-    mov %rax, %r10
-
-    mov %rcx, %r12
-    mov %r8, %rbx
-    cmp $0, %r12
+    cmp $1, %rdi
     je .L_use_dot
+    cmp $2, %rdi
+    je .L_one_arg
+    cmp $3, %rdi
+    je .L_two_arg
+    jmp .L_usage
 
-    mov (%rbx), %rsi
+.L_one_arg:
+    mov 16(%rsp), %rsi
+    movb (%rsi), %al
+    cmp $'-', %al
+    jne .L_open
+    movb 1(%rsi), %al
+    cmp $'a', %al
+    jne .L_usage
+    cmpb $0, 2(%rsi)
+    jne .L_usage
+    mov $1, %r10d
+    jmp .L_use_dot
+
+.L_two_arg:
+    mov 16(%rsp), %rsi
+    movb (%rsi), %al
+    cmp $'-', %al
+    jne .L_usage
+    movb 1(%rsi), %al
+    cmp $'a', %al
+    jne .L_usage
+    cmpb $0, 2(%rsi)
+    jne .L_usage
+    mov $1, %r10d
+    mov 24(%rsp), %rsi
     jmp .L_open
 
 .L_use_dot:
@@ -70,22 +90,22 @@ _start:
     test $1, %r10
     jne .L_print
 
-    mov %r8, %rdi
-    lea .L_dot(%rip), %rsi
-    call util_streq
-    cmp $1, %rax
+    movb (%r8), %al
+    cmp $'.', %al
+    jne .L_print
+    movb 1(%r8), %al
+    cmp $0, %al
     je .L_next
-
-    mov %r8, %rdi
-    lea .L_dotdot(%rip), %rsi
-    call util_streq
-    cmp $1, %rax
+    cmp $'.', %al
+    jne .L_print
+    movb 2(%r8), %al
+    cmp $0, %al
     je .L_next
 
 .L_print:
 
     mov %r8, %rdi
-    call util_strlen
+    call .L_strlen
     mov %rax, %rdx
     mov $1, %rdi
     mov %r8, %rsi
@@ -118,3 +138,14 @@ _start:
     call sys_write
     mov $1, %rdi
     call sys_exit
+
+.L_strlen:
+    xor %rax, %rax
+.L_strlen_loop:
+    movb (%rdi,%rax,1), %cl
+    test %cl, %cl
+    je .L_strlen_done
+    inc %rax
+    jmp .L_strlen_loop
+.L_strlen_done:
+    ret

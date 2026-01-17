@@ -20,16 +20,9 @@
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
+    cmp $2, %rdi
     jne .L_usage
-    cmp $0, %rcx
-    je .L_usage
-
-    mov %r8, %rbx
-    mov (%rbx), %rsi
+    mov 16(%rsp), %rsi
 
     mov $-100, %rdi
     xor %rdx, %rdx

@@ -10,23 +10,16 @@
 .section .text
 .global _start
 .include "syscalls.inc"
-.include "utils.inc"
 
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
-    jne .L_usage_err
-
-    cmp $0, %rcx
+    cmp $1, %rdi
     je .L_stdin
-    cmp $1, %rcx
+    cmp $2, %rdi
     jne .L_usage_err
 
-    mov (%r8), %rsi
+    mov 16(%rsp), %rsi
     mov $-100, %rdi
     xor %rdx, %rdx
     xor %r10, %r10
