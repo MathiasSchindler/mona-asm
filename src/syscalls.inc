@@ -16,6 +16,8 @@
 .equ SYS_link, 86
 .equ SYS_chmod, 90
 .equ SYS_chown, 92
+.equ SYS_clock_gettime, 228
+.equ SYS_getuid, 102
 
 .global sys_exit
 .global sys_write
@@ -33,6 +35,8 @@
 .global sys_link
 .global sys_chmod
 .global sys_chown
+.global sys_clock_gettime
+.global sys_getuid
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -111,5 +115,15 @@ sys_chmod:
 
 sys_chown:
     mov $SYS_chown, %rax
+    syscall
+    ret
+
+sys_clock_gettime:
+    mov $SYS_clock_gettime, %rax
+    syscall
+    ret
+
+sys_getuid:
+    mov $SYS_getuid, %rax
     syscall
     ret

@@ -62,6 +62,16 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/head.mobj -o $(BUILD)/tools/head
 	$(BUILD)/as64 ../src/tail.s -o $(BUILD)/tools/tail.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/tail.mobj -o $(BUILD)/tools/tail
+	$(BUILD)/as64 ../src/date.s -o $(BUILD)/tools/date.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/date.mobj -o $(BUILD)/tools/date
+	$(BUILD)/as64 ../src/seq.s -o $(BUILD)/tools/seq.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/seq.mobj -o $(BUILD)/tools/seq
+	$(BUILD)/as64 ../src/whoami.s -o $(BUILD)/tools/whoami.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/whoami.mobj -o $(BUILD)/tools/whoami
+	$(BUILD)/as64 ../src/yes.s -o $(BUILD)/tools/yes.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/yes.mobj -o $(BUILD)/tools/yes
+	$(BUILD)/as64 ../src/printf.s -o $(BUILD)/tools/printf.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/printf.mobj -o $(BUILD)/tools/printf
 
 size: test
 	@echo "Sizes (bytes):"

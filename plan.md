@@ -274,11 +274,26 @@ Status: not started.
 
 ## Next coreutils candidates (low-risk order)
 
-1. `du` (bytes only, single file/dir)
-2. `chmod` (octal mode, single file)
-3. `chown` (numeric uid:gid, single file)
-4. `date` (epoch seconds only)
-5. `sleep` (integer seconds)
+1. `chown` (numeric uid:gid, single file)
+2. `date` (epoch seconds only)
+3. `sleep` (integer seconds)
+4. `basename`
+5. `dirname`
+6. `yes`
+7. `uname`
+8. `whoami`
+9. `id`
+10. `mktemp`
+11. `truncate`
+12. `seq`
+13. `printf`
+14. `tee`
+15. `tr`
+16. `sort`
+17. `uniq`
+18. `cut`
+19. `paste`
+20. `od`
 
 ---
 

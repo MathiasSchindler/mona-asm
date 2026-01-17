@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -199,6 +199,56 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "du/chmod ok"
+	@out="$$( $(BUILD_DIR)/seq 3 )"; \
+	if [ "$$out" != "$$( printf '1\n2\n3' )" ]; then \
+		echo "seq 3 failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( $(BUILD_DIR)/seq 2 4 )"; \
+	if [ "$$out" != "$$( printf '2\n3\n4' )" ]; then \
+		echo "seq 2 4 failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "seq ok"
+	@out="$$( $(BUILD_DIR)/date )"; \
+	printf '%s' "$$out" | grep -Eq '^[0-9]+$$' || { echo "date failed: $$out"; exit 1; }; \
+	echo "date ok"
+	@out="$$( $(BUILD_DIR)/whoami )"; \
+	printf '%s' "$$out" | grep -Eq '^[A-Za-z0-9_.-]+$$' || { echo "whoami failed: $$out"; exit 1; }; \
+	echo "whoami ok"
+	@out="$$( $(BUILD_DIR)/printf 'x%s%dy' foo 3 )"; \
+	if [ "$$out" != "xfoo3y" ]; then \
+		echo "printf failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( $(BUILD_DIR)/printf '%u %x %X %o %c' 255 255 255 8 65 )"; \
+	if [ "$$out" != "255 ff FF 10 A" ]; then \
+		echo "printf format failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( $(BUILD_DIR)/printf '%b' 'a\nb' )"; \
+	if [ "$$out" != "$$( printf 'a\nb' )" ]; then \
+		echo "printf %b failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( $(BUILD_DIR)/printf 'a\nb' )"; \
+	if [ "$$out" != "$$( printf 'a\nb' )" ]; then \
+		echo "printf escape failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "printf ok"
+	@out="$$( $(BUILD_DIR)/yes hi | $(BUILD_DIR)/head )"; \
+	expected="$$( printf 'hi\nhi\nhi\nhi\nhi\nhi\nhi\nhi\nhi\nhi' )"; \
+	if [ "$$out" != "$$expected" ]; then \
+		echo "yes failed: $$out"; \
+		exit 1; \
+	fi; \
+	out="$$( $(BUILD_DIR)/yes -n hi | head -c 5 )"; \
+	if [ "$$out" != "hihih" ]; then \
+		echo "yes -n failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "yes ok"
 
 clean:
 	rm -rf $(BUILD_DIR)
