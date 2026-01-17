@@ -10,6 +10,8 @@
 .equ SYS_mkdir, 83
 .equ SYS_rmdir, 84
 .equ SYS_unlink, 87
+.equ SYS_utimensat, 280
+.equ SYS_lseek, 8
 
 .global sys_exit
 .global sys_write
@@ -21,6 +23,8 @@
 .global sys_mkdir
 .global sys_rmdir
 .global sys_unlink
+.global sys_utimensat
+.global sys_lseek
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -69,5 +73,15 @@ sys_rmdir:
 
 sys_unlink:
     mov $SYS_unlink, %rax
+    syscall
+    ret
+
+sys_utimensat:
+    mov $SYS_utimensat, %rax
+    syscall
+    ret
+
+sys_lseek:
+    mov $SYS_lseek, %rax
     syscall
     ret

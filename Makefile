@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -139,6 +139,27 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "mkdir/rmdir/rm ok"
+	@rm -f $(BUILD_DIR)/touch_test.txt; \
+	$(BUILD_DIR)/touch $(BUILD_DIR)/touch_test.txt; status=$$?; \
+	if [ $$status -ne 0 ] || [ ! -f $(BUILD_DIR)/touch_test.txt ]; then \
+		echo "touch failed"; \
+		exit 1; \
+	fi; \
+	printf '1\n2\n3\n' > $(BUILD_DIR)/head_tail_test.txt; \
+	out="$$( $(BUILD_DIR)/head $(BUILD_DIR)/head_tail_test.txt )"; \
+	expected="$$( printf '1\n2\n3' )"; \
+	if [ "$$out" != "$$expected" ]; then \
+		echo "head failed: $$out"; \
+		exit 1; \
+	fi; \
+	printf '1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n' > $(BUILD_DIR)/head_tail_test.txt; \
+	out="$$( $(BUILD_DIR)/tail $(BUILD_DIR)/head_tail_test.txt )"; \
+	expected="$$( printf '3\n4\n5\n6\n7\n8\n9\n10\n11\n12' )"; \
+	if [ "$$out" != "$$expected" ]; then \
+		echo "tail failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "touch/head/tail ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

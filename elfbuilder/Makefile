@@ -34,10 +34,22 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/ls.mobj -o $(BUILD)/tools/ls
 	$(BUILD)/as64 ../src/cat.s -o $(BUILD)/tools/cat.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/cat.mobj -o $(BUILD)/tools/cat
+	$(BUILD)/as64 ../src/mkdir.s -o $(BUILD)/tools/mkdir.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/mkdir.mobj -o $(BUILD)/tools/mkdir
+	$(BUILD)/as64 ../src/rmdir.s -o $(BUILD)/tools/rmdir.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/rmdir.mobj -o $(BUILD)/tools/rmdir
+	$(BUILD)/as64 ../src/rm.s -o $(BUILD)/tools/rm.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/rm.mobj -o $(BUILD)/tools/rm
 	$(BUILD)/as64 ../src/stat.s -o $(BUILD)/tools/stat.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/stat.mobj -o $(BUILD)/tools/stat
 	$(BUILD)/as64 ../src/utils_test.s -o $(BUILD)/tools/utils_test.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/utils_test.mobj -o $(BUILD)/tools/utils_test
+	$(BUILD)/as64 ../src/touch.s -o $(BUILD)/tools/touch.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/touch.mobj -o $(BUILD)/tools/touch
+	$(BUILD)/as64 ../src/head.s -o $(BUILD)/tools/head.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/head.mobj -o $(BUILD)/tools/head
+	$(BUILD)/as64 ../src/tail.s -o $(BUILD)/tools/tail.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/tail.mobj -o $(BUILD)/tools/tail
 
 size: test
 	@echo "Sizes (bytes):"
