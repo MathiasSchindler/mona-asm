@@ -43,13 +43,13 @@ _start:
     add %r14, %rbx
 
 .L_line_loop:
-    cmp %rbx, %r15
-    jae .L_fallback
+    cmp %r15, %rbx
+    jbe .L_fallback
 
     mov %r15, %r8
 .L_name_scan:
-    cmp %rbx, %r15
-    jae .L_fallback
+    cmp %r15, %rbx
+    jbe .L_fallback
     movb (%r15), %al
     cmp $'\n', %al
     je .L_next_line
@@ -62,8 +62,8 @@ _start:
     inc %r15
 
 .L_pass_scan:
-    cmp %rbx, %r15
-    jae .L_fallback
+    cmp %r15, %rbx
+    jbe .L_fallback
     movb (%r15), %al
     cmp $'\n', %al
     je .L_next_line
@@ -76,8 +76,8 @@ _start:
     mov %r15, %r10
 
 .L_uid_scan:
-    cmp %rbx, %r15
-    jae .L_fallback
+    cmp %r15, %rbx
+    jbe .L_fallback
     movb (%r15), %al
     cmp $'\n', %al
     je .L_uid_parse
@@ -127,8 +127,8 @@ _start:
     call sys_exit
 
 .L_skip_line:
-    cmp %rbx, %r15
-    jae .L_fallback
+    cmp %r15, %rbx
+    jbe .L_fallback
     movb (%r15), %al
     cmp $'\n', %al
     je .L_next_line

@@ -49,7 +49,8 @@ _start:
 .L_seq_start:
     mov %rbx, %rax
     cmp %r13, %rax
-    jg .L_done
+    jle .L_loop
+    jmp .L_done
 
 .L_loop:
     mov %rbx, %rdi

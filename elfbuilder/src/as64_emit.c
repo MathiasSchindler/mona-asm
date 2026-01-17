@@ -250,6 +250,7 @@ void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *relocs, 
             else if (strcmp(mn, "jb") == 0) { op2 = 0x82; short_op = 0x72; }
             else if (strcmp(mn, "ja") == 0) { op2 = 0x87; short_op = 0x77; }
             else if (strcmp(mn, "jbe") == 0) { op2 = 0x86; short_op = 0x76; }
+            else if (strcmp(mn, "jae") == 0) { op2 = 0x83; short_op = 0x73; }
             else if (strcmp(mn, "js") == 0) { op2 = 0x88; short_op = 0x78; }
             else die("unsupported jump");
         }

@@ -15,7 +15,11 @@ void pass1(LineVec *lines, SymVec *syms, uint32_t *text_size, uint32_t *data_siz
         char *line = trim(work);
         if (!*line) { free(work); continue; }
 
-        char *colon = strchr(line, ':');
+        char *colon = NULL;
+        for (char *p = line; *p; p++) {
+            if (*p == ' ' || *p == '\t') break;
+            if (*p == ':') { colon = p; break; }
+        }
         if (colon) {
             *colon = 0;
             char *name = trim(line);
@@ -113,7 +117,11 @@ void pass2(LineVec *lines, SymVec *syms, Buf *text, Buf *data, uint32_t *bss_siz
         char *line = trim(work);
         if (!*line) { free(work); continue; }
 
-        char *colon = strchr(line, ':');
+        char *colon = NULL;
+        for (char *p = line; *p; p++) {
+            if (*p == ' ' || *p == '\t') break;
+            if (*p == ':') { colon = p; break; }
+        }
         if (colon) {
             line = trim(colon + 1);
             if (!*line) { free(work); continue; }
