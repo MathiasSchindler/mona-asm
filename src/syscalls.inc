@@ -12,6 +12,10 @@
 .equ SYS_unlink, 87
 .equ SYS_utimensat, 280
 .equ SYS_lseek, 8
+.equ SYS_rename, 82
+.equ SYS_link, 86
+.equ SYS_chmod, 90
+.equ SYS_chown, 92
 
 .global sys_exit
 .global sys_write
@@ -25,6 +29,10 @@
 .global sys_unlink
 .global sys_utimensat
 .global sys_lseek
+.global sys_rename
+.global sys_link
+.global sys_chmod
+.global sys_chown
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -83,5 +91,25 @@ sys_utimensat:
 
 sys_lseek:
     mov $SYS_lseek, %rax
+    syscall
+    ret
+
+sys_rename:
+    mov $SYS_rename, %rax
+    syscall
+    ret
+
+sys_link:
+    mov $SYS_link, %rax
+    syscall
+    ret
+
+sys_chmod:
+    mov $SYS_chmod, %rax
+    syscall
+    ret
+
+sys_chown:
+    mov $SYS_chown, %rax
     syscall
     ret

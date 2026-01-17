@@ -274,15 +274,11 @@ Status: not started.
 
 ## Next coreutils candidates (low-risk order)
 
-1. `mkdir` (single dir, no flags)
-2. `rmdir` (single dir)
-3. `rm` (single file, no recursion)
-4. `touch` (create/utime if exists)
-5. `head` (default 10 lines, file or stdin)
-6. `tail` (default 10 lines, file or stdin)
-7. `cp` (single file → file)
-8. `mv` (rename only, same filesystem)
-9. `ln` (hard link, optional `-s` later)
+1. `du` (bytes only, single file/dir)
+2. `chmod` (octal mode, single file)
+3. `chown` (numeric uid:gid, single file)
+4. `date` (epoch seconds only)
+5. `sleep` (integer seconds)
 
 ---
 
@@ -300,6 +296,8 @@ Status: not started.
 - Create temp dir, `mkdir` then `rmdir`.
 - Create file, `rm` succeeds; `rm` on directory fails with exit 1.
 
+Status: done.
+
 ### Stage 17 — Timestamp + small output
 **Tools:** `touch`, `head`, `tail` (default 10 lines)
 
@@ -311,6 +309,8 @@ Status: not started.
 - `touch` creates file and updates mtime.
 - `head`/`tail` of a fixed fixture file matches expected output.
 
+Status: done.
+
 ### Stage 18 — Simple file ops
 **Tools:** `cp`, `mv`, `ln`
 
@@ -321,3 +321,24 @@ Status: not started.
 
 **Test:**
 - Copy file contents identical; `mv` rename works in same dir; `ln` creates hard link.
+
+Status: done.
+
+### Stage 19 — Basic metadata + size
+**Tools:** `du` (bytes), `chmod` (octal), `chown` (numeric uid:gid)
+
+**Test:**
+- `du` on a fixed file equals byte count.
+- `chmod` changes mode as expected.
+- `chown` works for numeric uid:gid (or exits 1 if not permitted).
+
+Status: not started.
+
+### Stage 20 — Time + sleep
+**Tools:** `date` (epoch seconds), `sleep` (integer seconds)
+
+**Test:**
+- `date` prints digits only and changes over time.
+- `sleep 1` delays approximately one second.
+
+Status: not started.

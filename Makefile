@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -160,6 +160,45 @@ test: $(BINS)
 		exit 1; \
 	fi; \
 	echo "touch/head/tail ok"
+	@rm -f $(BUILD_DIR)/cp_dst.txt $(BUILD_DIR)/mv_dst.txt $(BUILD_DIR)/ln_dst.txt; \
+	printf 'copyme' > $(BUILD_DIR)/cp_src.txt; \
+	$(BUILD_DIR)/cp $(BUILD_DIR)/cp_src.txt $(BUILD_DIR)/cp_dst.txt; status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "cp failed"; \
+		exit 1; \
+	fi; \
+	cmp -s $(BUILD_DIR)/cp_src.txt $(BUILD_DIR)/cp_dst.txt || { echo "cp mismatch"; exit 1; }; \
+	$(BUILD_DIR)/mv $(BUILD_DIR)/cp_dst.txt $(BUILD_DIR)/mv_dst.txt; status=$$?; \
+	if [ $$status -ne 0 ] || [ ! -f $(BUILD_DIR)/mv_dst.txt ]; then \
+		echo "mv failed"; \
+		exit 1; \
+	fi; \
+	$(BUILD_DIR)/ln $(BUILD_DIR)/mv_dst.txt $(BUILD_DIR)/ln_dst.txt; status=$$?; \
+	if [ $$status -ne 0 ] || [ ! -f $(BUILD_DIR)/ln_dst.txt ]; then \
+		echo "ln failed"; \
+		exit 1; \
+	fi; \
+	cmp -s $(BUILD_DIR)/mv_dst.txt $(BUILD_DIR)/ln_dst.txt || { echo "ln content mismatch"; exit 1; }; \
+	echo "cp/mv/ln ok"
+	@printf 'abcde' > $(BUILD_DIR)/du_test.txt; \
+	out="$$( $(BUILD_DIR)/du $(BUILD_DIR)/du_test.txt )"; \
+	expected="$$( printf '5' )"; \
+	if [ "$$out" != "$$expected" ]; then \
+		echo "du failed: $$out"; \
+		exit 1; \
+	fi; \
+	printf 'x' > $(BUILD_DIR)/chmod_test.txt; \
+	$(BUILD_DIR)/chmod 600 $(BUILD_DIR)/chmod_test.txt; status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "chmod failed"; \
+		exit 1; \
+	fi; \
+	mode="$$( stat -c %a $(BUILD_DIR)/chmod_test.txt )"; \
+	if [ "$$mode" != "600" ]; then \
+		echo "chmod mode failed: $$mode"; \
+		exit 1; \
+	fi; \
+	echo "du/chmod ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -42,8 +42,18 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/rm.mobj -o $(BUILD)/tools/rm
 	$(BUILD)/as64 ../src/stat.s -o $(BUILD)/tools/stat.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/stat.mobj -o $(BUILD)/tools/stat
+	$(BUILD)/as64 ../src/cp.s -o $(BUILD)/tools/cp.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/cp.mobj -o $(BUILD)/tools/cp
+	$(BUILD)/as64 ../src/mv.s -o $(BUILD)/tools/mv.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/mv.mobj -o $(BUILD)/tools/mv
+	$(BUILD)/as64 ../src/ln.s -o $(BUILD)/tools/ln.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/ln.mobj -o $(BUILD)/tools/ln
 	$(BUILD)/as64 ../src/utils_test.s -o $(BUILD)/tools/utils_test.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/utils_test.mobj -o $(BUILD)/tools/utils_test
+	$(BUILD)/as64 ../src/du.s -o $(BUILD)/tools/du.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/du.mobj -o $(BUILD)/tools/du
+	$(BUILD)/as64 ../src/chmod.s -o $(BUILD)/tools/chmod.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/chmod.mobj -o $(BUILD)/tools/chmod
 	$(BUILD)/as64 ../src/touch.s -o $(BUILD)/tools/touch.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/touch.mobj -o $(BUILD)/tools/touch
 	$(BUILD)/as64 ../src/head.s -o $(BUILD)/tools/head.mobj
