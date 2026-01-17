@@ -164,7 +164,8 @@ util_parse_flags:
     je .L_util_pf_done
     cmp $'-', %cl
     jne .L_util_pf_parse_group
-    cmpb $0, 2(%r8)
+    movb 2(%r8), %cl
+    cmp $0, %cl
     je .L_util_pf_terminator
     jmp .L_util_pf_invalid
 

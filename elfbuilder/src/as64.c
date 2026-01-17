@@ -91,6 +91,10 @@ typedef struct {
     Mem mem;
 } Operand;
 
+static int64_t parse_i64(const char *s, int *ok);
+static int parse_char_literal(const char *s, int *ok);
+static int64_t parse_equ_expr(const char *s, SymVec *syms, uint32_t dot, int *ok);
+
 static void die(const char *msg) {
     fprintf(stderr, "as64: %s\n", msg);
     exit(1);
@@ -229,6 +233,7 @@ static int sym_find(SymVec *syms, const char *name) {
     return -1;
 }
 
+
 static uint32_t parse_u32(const char *s, int *ok) {
     *ok = 1;
     if (starts_with(s, "0x") || starts_with(s, "0X")) {
@@ -278,6 +283,74 @@ static int parse_char_literal(const char *s, int *ok) {
         }
     }
     return 0;
+}
+
+static int64_t parse_equ_expr(const char *s, SymVec *syms, uint32_t dot, int *ok) {
+    *ok = 1;
+    const char *p = s;
+    int64_t value = 0;
+    int have_value = 0;
+    int sign = 1;
+
+    for (;;) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') break;
+
+        if (*p == '+') { sign = 1; p++; continue; }
+        if (*p == '-') { sign = -1; p++; continue; }
+
+        int64_t term = 0;
+        if (*p == '.' && (p[1] == '\0' || p[1] == ' ' || p[1] == '\t' || p[1] == '+' || p[1] == '-')) {
+            term = (int64_t)dot;
+            p++;
+        } else if (*p == '\'' ) {
+            char lit_buf[8] = {0};
+            size_t i = 0;
+            while (*p && i + 1 < sizeof(lit_buf)) {
+                lit_buf[i++] = *p++;
+                if (lit_buf[i - 1] == '\'' && i > 1) break;
+            }
+            lit_buf[i] = 0;
+            int lit_ok = 0;
+            int ch = parse_char_literal(lit_buf, &lit_ok);
+            if (!lit_ok) { *ok = 0; return 0; }
+            term = ch;
+        } else if ((*p >= '0' && *p <= '9') || (*p == '0' && (p[1] == 'x' || p[1] == 'X'))) {
+            char num_buf[64] = {0};
+            size_t i = 0;
+            while (*p && *p != ' ' && *p != '\t' && *p != '+' && *p != '-') {
+                if (i + 1 >= sizeof(num_buf)) { *ok = 0; return 0; }
+                num_buf[i++] = *p++;
+            }
+            num_buf[i] = 0;
+            int num_ok = 0;
+            int64_t v = parse_i64(num_buf, &num_ok);
+            if (!num_ok) { *ok = 0; return 0; }
+            term = v;
+        } else {
+            char sym_buf[128] = {0};
+            size_t i = 0;
+            while (*p && *p != ' ' && *p != '\t' && *p != '+' && *p != '-') {
+                if (i + 1 >= sizeof(sym_buf)) { *ok = 0; return 0; }
+                sym_buf[i++] = *p++;
+            }
+            sym_buf[i] = 0;
+            int idx = sym_find(syms, sym_buf);
+            if (idx < 0) { *ok = 0; return 0; }
+            term = syms->data[idx].value;
+        }
+
+        if (!have_value) {
+            value = sign * term;
+            have_value = 1;
+        } else {
+            value += sign * term;
+        }
+        sign = 1;
+    }
+
+    if (!have_value) { *ok = 0; return 0; }
+    return value;
 }
 
 static int parse_reg(const char *r, Reg *out) {
@@ -815,6 +888,17 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
     }
 
     if (strcmp(mn, "test") == 0) {
+        if (o1.kind == OP_IMM && o2.kind == OP_REG) {
+            if (o2.reg.size == 8) {
+                emit_op_digit_rm(out, 0xF6, 0, &o2, 0, relocs, syms, sec, 0);
+                emit_u8(out, (uint8_t)o1.imm);
+            } else {
+                emit_op_digit_rm(out, 0xF7, 0, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+                emit_u32(out, (uint32_t)o1.imm);
+            }
+            free(work);
+            return;
+        }
         if (o1.kind == OP_REG && o2.kind == OP_REG) {
             uint8_t op = (o1.reg.size == 8) ? 0x84 : 0x85;
             emit_op_reg_rm(out, op, &o1.reg, &o2, o1.reg.size == 64, relocs, syms, sec, 0);
@@ -865,6 +949,14 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
         }
     }
 
+    if (strcmp(mn, "or") == 0) {
+        if (o1.kind == OP_REG && o2.kind == OP_REG) {
+            emit_op_reg_rm(out, 0x09, &o1.reg, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
+            free(work);
+            return;
+        }
+    }
+
     if (strcmp(mn, "inc") == 0 || strcmp(mn, "dec") == 0) {
         if (o1.kind != OP_REG) die("inc/dec expects reg");
         int digit = (strcmp(mn, "inc") == 0) ? 0 : 1;
@@ -888,6 +980,15 @@ static void emit_text_line(const char *line, Buf *out, SymVec *syms, RelocVec *r
             emit_u8(out, 0x69);
             emit_u8(out, (uint8_t)(0xC0 | ((o3.reg.id & 7) << 3) | (o2.reg.id & 7)));
             emit_u32(out, (uint32_t)o1.imm);
+            free(work);
+            return;
+        }
+    }
+
+    if (strcmp(mn, "shl") == 0) {
+        if (o1.kind == OP_REG && o1.reg.size == 8 && o1.reg.id == 1 && o2.kind == OP_REG) {
+            uint8_t op = (o2.reg.size == 8) ? 0xD2 : 0xD3;
+            emit_op_digit_rm(out, op, 4, &o2, o2.reg.size == 64, relocs, syms, sec, 0);
             free(work);
             return;
         }
@@ -963,8 +1064,13 @@ static void pass1(LineVec *lines, SymVec *syms, uint32_t *text_size, uint32_t *d
             char *name = trim(p);
             char *val = trim(comma + 1);
             int ok = 0;
-            uint32_t v = parse_u32(val, &ok);
-            if (!ok) die("invalid .equ value");
+            uint32_t dot = 0;
+            if (sec == SEC_TEXT) dot = tsize;
+            else if (sec == SEC_DATA) dot = dsize;
+            else if (sec == SEC_BSS) dot = bsize;
+            int64_t v64 = parse_equ_expr(val, syms, dot, &ok);
+            if (!ok || v64 < 0 || v64 > UINT32_MAX) die("invalid .equ value");
+            uint32_t v = (uint32_t)v64;
             if (sym_find(syms, name) >= 0) die("duplicate symbol");
             Symbol s = {xstrdup(name), v, MOBJ_SYM_ABS};
             symvec_push(syms, s);
