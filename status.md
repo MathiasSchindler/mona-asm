@@ -13,6 +13,8 @@
 | stat | 6 | done | Prints size, mode (masked 0x0fff), and mtime seconds (rejects invalid flags). |
 | wc | 7 | done | Prints lines, words, and bytes for stdin or files; supports `-l`, `-w`, `-c`. |
 
+Stage 9 (common library extraction) is done.
+
 ## Shared utilities
 
 - [src/utils.inc](src/utils.inc): `util_strlen`, `util_streq`, `util_memcpy`, `util_utoa`, `util_itoa`, `util_parse_int`, `util_parse_flags`.

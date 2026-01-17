@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -116,6 +116,29 @@ test: $(BINS)
 	fi; \
 	grep -q "usage:" $(BUILD_DIR)/opt_err.txt || { echo "options usage missing"; exit 1; }; \
 	echo "opts ok"
+	@rm -rf $(BUILD_DIR)/mr_test; \
+	$(BUILD_DIR)/mkdir $(BUILD_DIR)/mr_test; status=$$?; \
+	if [ $$status -ne 0 ] || [ ! -d $(BUILD_DIR)/mr_test ]; then \
+		echo "mkdir failed"; \
+		exit 1; \
+	fi; \
+	$(BUILD_DIR)/rmdir $(BUILD_DIR)/mr_test; status=$$?; \
+	if [ $$status -ne 0 ] || [ -d $(BUILD_DIR)/mr_test ]; then \
+		echo "rmdir failed"; \
+		exit 1; \
+	fi; \
+	printf 'x' > $(BUILD_DIR)/rm_test.txt; \
+	$(BUILD_DIR)/rm $(BUILD_DIR)/rm_test.txt; status=$$?; \
+	if [ $$status -ne 0 ] || [ -e $(BUILD_DIR)/rm_test.txt ]; then \
+		echo "rm file failed"; \
+		exit 1; \
+	fi; \
+	$(BUILD_DIR)/rm $(BUILD_DIR) >/dev/null 2>&1; status=$$?; \
+	if [ $$status -eq 0 ]; then \
+		echo "rm directory should fail"; \
+		exit 1; \
+	fi; \
+	echo "mkdir/rmdir/rm ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

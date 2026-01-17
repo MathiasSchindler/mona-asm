@@ -7,6 +7,9 @@
 .equ SYS_close, 3
 .equ SYS_fstat, 5
 .equ SYS_getdents64, 217
+.equ SYS_mkdir, 83
+.equ SYS_rmdir, 84
+.equ SYS_unlink, 87
 
 .global sys_exit
 .global sys_write
@@ -15,6 +18,9 @@
 .global sys_close
 .global sys_fstat
 .global sys_getdents64
+.global sys_mkdir
+.global sys_rmdir
+.global sys_unlink
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -48,5 +54,20 @@ sys_fstat:
 
 sys_getdents64:
     mov $SYS_getdents64, %rax
+    syscall
+    ret
+
+sys_mkdir:
+    mov $SYS_mkdir, %rax
+    syscall
+    ret
+
+sys_rmdir:
+    mov $SYS_rmdir, %rax
+    syscall
+    ret
+
+sys_unlink:
+    mov $SYS_unlink, %rax
     syscall
     ret

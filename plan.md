@@ -34,6 +34,15 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 
 ## Step-by-step implementation plan with tests
 
+## Current status snapshot (Jan 2026)
+
+- Coreutils: Stages 0–9 complete for the current tool set.
+- elfbuilder: `as64` + `ld64` exist as dependency-free C tools and can build all current coreutils.
+- Stage 9 is done.
+- Stage 11–12 are effectively done in C (elfbuilder MVP).
+- Stage 13 is in progress (instruction/dir support expanding as needed).
+- Stage 14 is partially done for the current tool set (elfbuilder builds all existing tools).
+
 ### Stage 0 — Toolchain baseline
 **Goal:** establish a known-good build/run path.
 
@@ -176,6 +185,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 **Test:**
 - Rebuild all tools and rerun tests.
 
+Status: done.
+
 ---
 
 ### Stage 10 — Size/strip/packaging
@@ -187,6 +198,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 
 **Test:**
 - All tests pass after stripping and install.
+
+Status: not started.
 
 ---
 
@@ -201,6 +214,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 **Test:**
 - Assemble the Stage 0 no-op and compare behavior.
 
+Status: done in C (elfbuilder/as64).
+
 ---
 
 ### Stage 12 — Self-hosted linker (Phase 1)
@@ -213,6 +228,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 **Test:**
 - Link two objects (main + util) and run.
 
+Status: done in C (elfbuilder/ld64).
+
 ---
 
 ### Stage 13 — Expand assembler coverage
@@ -223,6 +240,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 
 **Test:**
 - Assemble/link a mid-complexity tool (e.g., `cat`).
+
+Status: in progress (coverage expanded to build all current tools; continue filling gaps).
 
 ---
 
@@ -235,6 +254,8 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 **Test:**
 - Full test suite on all tools.
 
+Status: in progress (elfbuilder builds all current tools).
+
 ---
 
 ### Stage 15 — Optimization + hardening
@@ -246,3 +267,57 @@ Size optimizations we should **avoid** early (to prevent long-term harm):
 
 **Test:**
 - Regression suite plus fuzz results.
+
+Status: not started.
+
+---
+
+## Next coreutils candidates (low-risk order)
+
+1. `mkdir` (single dir, no flags)
+2. `rmdir` (single dir)
+3. `rm` (single file, no recursion)
+4. `touch` (create/utime if exists)
+5. `head` (default 10 lines, file or stdin)
+6. `tail` (default 10 lines, file or stdin)
+7. `cp` (single file → file)
+8. `mv` (rename only, same filesystem)
+9. `ln` (hard link, optional `-s` later)
+
+---
+
+## New milestones (Stage 16+)
+
+### Stage 16 — Basic filesystem mutation
+**Tools:** `mkdir`, `rmdir`, `rm` (single target, no recursion)
+
+**Implementation notes:**
+- `mkdir`: `sys_mkdir` (mode 0777 masked by umask); no flags.
+- `rmdir`: `sys_rmdir`; no flags.
+- `rm`: `sys_unlink` for files; reject directories (exit 1).
+
+**Test:**
+- Create temp dir, `mkdir` then `rmdir`.
+- Create file, `rm` succeeds; `rm` on directory fails with exit 1.
+
+### Stage 17 — Timestamp + small output
+**Tools:** `touch`, `head`, `tail` (default 10 lines)
+
+**Implementation notes:**
+- `touch`: `openat` with `O_CREAT|O_WRONLY` then `utimensat` (or fallback to `utime` syscall if preferred); no flags.
+- `head`/`tail`: stdin or file; minimal line counting; no flags.
+
+**Test:**
+- `touch` creates file and updates mtime.
+- `head`/`tail` of a fixed fixture file matches expected output.
+
+### Stage 18 — Simple file ops
+**Tools:** `cp`, `mv`, `ln`
+
+**Implementation notes:**
+- `cp`: open/read/write loop; refuse directories.
+- `mv`: `rename` only; if cross-device, exit 1.
+- `ln`: `link` only; optional `-s` later.
+
+**Test:**
+- Copy file contents identical; `mv` rename works in same dir; `ln` creates hard link.
