@@ -5,7 +5,6 @@
 
 .section .text
 .global _start
-.include "utils.inc"
 
 .equ SYS_exit, 60
 .equ SYS_write, 1
@@ -16,16 +15,11 @@
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
+    cmp $2, %rdi
     jne .L_usage_err
-    cmp $1, %rcx
-    jne .L_usage_err
-
-    mov (%r8), %rsi
+    mov 16(%rsp), %r13
     mov $-100, %rdi
+    mov %r13, %rsi
     mov $65, %rdx
     mov $0666, %r10
     mov $SYS_openat, %eax
@@ -35,7 +29,7 @@ _start:
     mov %rax, %r12
 
     mov $-100, %rdi
-    mov (%r8), %rsi
+    mov %r13, %rsi
     xor %rdx, %rdx
     xor %r10, %r10
     mov $SYS_utimensat, %eax

@@ -23,15 +23,9 @@
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
+    cmp $2, %rdi
     jne .L_usage_err
-    cmp $1, %rcx
-    jne .L_usage_err
-
-    mov (%r8), %rsi
+    mov 16(%rsp), %rsi
     mov $-100, %rdi
     xor %rdx, %rdx
     xor %r10, %r10

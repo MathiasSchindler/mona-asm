@@ -9,7 +9,6 @@
 
 .section .text
 .global _start
-.include "utils.inc"
 
 .equ SYS_exit, 60
 .equ SYS_write, 1
@@ -19,16 +18,10 @@
 
 _start:
     mov (%rsp), %rdi
-    lea 8(%rsp), %rsi
-    xor %rdx, %rdx
-    call util_parse_flags
-    test %rdx, %rdx
+    cmp $3, %rdi
     jne .L_usage_err
-    cmp $2, %rcx
-    jne .L_usage_err
-
-    mov (%r8), %r12
-    mov 8(%r8), %r13
+    mov 16(%rsp), %r12
+    mov 24(%rsp), %r13
 
     mov $-100, %rdi
     mov %r12, %rsi
