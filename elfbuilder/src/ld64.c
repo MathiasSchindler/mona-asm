@@ -141,14 +141,14 @@ typedef struct {
     uint64_t p_align;
 } Elf64_Phdr;
 
-static void write_elf(const char *path, Buf *text, Buf *data, uint32_t bss_size, uint64_t entry_off) {
+static void write_elf(const char *path, Buf *text, Buf *data, uint32_t bss_size, uint64_t entry_off, int tiny) {
     FILE *f = fopen(path, "wb");
     if (!f) {
         fprintf(stderr, "ld64: failed to open %s: %s\n", path, strerror(errno));
         exit(1);
     }
 
-    const uint64_t base = 0x400000;
+    const uint64_t base = tiny ? 0x10000 : 0x400000;
     const uint64_t hdr_size = sizeof(Elf64_Ehdr) + sizeof(Elf64_Phdr);
     const uint64_t text_off = hdr_size;
     const uint64_t data_off = text_off + text->len;
@@ -202,10 +202,16 @@ int main(int argc, char **argv) {
 
     const char *in_path = argv[1];
     const char *out_path = NULL;
+    int tiny = 0;
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
             out_path = argv[i + 1];
             i++;
+            continue;
+        }
+        if (strcmp(argv[i], "--tiny-elf") == 0) {
+            tiny = 1;
+            continue;
         }
     }
     if (!out_path) die("missing -o output");
@@ -250,6 +256,6 @@ int main(int argc, char **argv) {
 
     apply_relocs(&text, &data, base, text_off, data_off, &syms, &rels);
 
-    write_elf(out_path, &text, &data, hdr.bss_size, syms.data[entry_idx].value);
+    write_elf(out_path, &text, &data, hdr.bss_size, syms.data[entry_idx].value, tiny);
     return 0;
 }
