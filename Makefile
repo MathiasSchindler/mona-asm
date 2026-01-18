@@ -5,7 +5,7 @@ LD := ld
 ASFLAGS := -I $(SRC_DIR)
 LDFLAGS := -s --build-id=none
 
-TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut tr od tee sleep basename dirname uname shell
+TOOLS := exit0 utils_test true false echo cat pwd ls stat wc mkdir rmdir rm touch head tail cp mv ln du chmod date seq whoami yes printf sort uniq cut tr od tee sleep basename dirname uname truncate paste shell
 BINS := $(addprefix $(BUILD_DIR)/,$(TOOLS))
 OBJS := $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(TOOLS)))
 
@@ -317,6 +317,25 @@ test: $(BINS)
 	@out="$$( $(BUILD_DIR)/uname )"; \
 	printf '%s' "$$out" | grep -Eq '^[A-Za-z]+' || { echo "uname failed: $$out"; exit 1; }; \
 	echo "uname ok"
+	@printf 'hello' > $(BUILD_DIR)/truncate_test.txt; \
+	$(BUILD_DIR)/truncate 3 $(BUILD_DIR)/truncate_test.txt; status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "truncate failed: $$status"; \
+		exit 1; \
+	fi; \
+	if [ "$$( stat -c %s $(BUILD_DIR)/truncate_test.txt )" != "3" ]; then \
+		echo "truncate size failed"; \
+		exit 1; \
+	fi; \
+	echo "truncate ok"
+	@printf 'a\nb\n' > $(BUILD_DIR)/paste_a.txt; \
+	printf '1\n2\n' > $(BUILD_DIR)/paste_b.txt; \
+	out="$$( $(BUILD_DIR)/paste $(BUILD_DIR)/paste_a.txt $(BUILD_DIR)/paste_b.txt )"; \
+	if [ "$$out" != "$$( printf 'a\t1\nb\t2' )" ]; then \
+		echo "paste failed: $$out"; \
+		exit 1; \
+	fi; \
+	echo "paste ok"
 
 clean:
 	rm -rf $(BUILD_DIR)

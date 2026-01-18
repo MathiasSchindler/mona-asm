@@ -34,9 +34,16 @@
 | tr | 20 | done | Translate or delete bytes; supports `-d`. |
 | od | 20 | done | Print bytes in octal (space-separated). |
 | tee | 20 | done | Copy stdin to stdout and files. |
+| sleep | 20 | done | Sleep for N seconds (integer). |
+| basename | 21 | done | Print final path component. |
+| dirname | 21 | done | Print directory portion of a path. |
+| uname | 21 | done | Print system name from uname. |
+| truncate | 21 | done | Set file size (single file). |
+| paste | 21 | done | Merge lines from two files (tab-separated). |
+| shell | 0–2 | in progress | Stage 0–2: prompt/read/tokenize/exec and `exit` builtin. |
 
 Stage 9 (common library extraction) is done.
-Stage 16–20 tools listed above are done.
+Stage 16–21 tools listed above are done (except `shell`, which is in progress).
 elfbuilder: as64/ld64 build all current tools; instruction coverage expanded as needed.
 
 ## Shared utilities

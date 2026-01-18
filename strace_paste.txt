@@ -1,0 +1,11 @@
+12946 execve("/home/mathias/mona-asm/build/paste", ["/home/mathias/mona-asm/build/pas"..., "/home/mathias/mona-asm/build/pas"..., "/home/mathias/mona-asm/build/pas"...], 0x7ffe26daa128 /* 69 vars */) = 0
+12946 openat(AT_FDCWD, "/home/mathias/mona-asm/build/paste_a.txt", O_RDONLY) = 3
+12946 openat(AT_FDCWD, "/home/mathias/mona-asm/build/paste_b.txt", O_RDONLY) = 4
+12946 read(3, "a\nb\n", 8192)           = 4
+12946 read(4, "1\n2\n", 8192)           = 4
+12946 write(1, "a", 1)                  = 1
+12946 write(1, "\t", 1)                 = 1
+12946 write(1, "1", 1)                  = 1
+12946 write(1, "\n", 1)                 = 1
+12946 --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_MAPERR, si_addr=0x246} ---
+12946 +++ killed by SIGSEGV (core dumped) +++

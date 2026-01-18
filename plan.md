@@ -331,7 +331,7 @@ Status: `du`/`chmod` done; `chown` not started.
 - `date` prints digits only and changes over time.
 - `sleep 1` delays approximately one second.
 
-Status: `date` done; `sleep` not started.
+Status: `date` and `sleep` done.
 
 ### Stage 21 — Text processing
 **Tools:** `seq`, `yes`, `printf`, `sort`, `uniq`, `cut`, `tr`, `tee`, `od`, `whoami`
@@ -344,16 +344,29 @@ Status: `date` done; `sleep` not started.
 
 Status: done.
 
+### Stage 22 — Path helpers
+**Tools:** `basename`, `dirname`, `uname`
+
+**Test:**
+- `basename /usr/bin/` → `bin`
+- `dirname /usr/bin/` → `/usr`
+- `uname` prints a system name
+
+Status: done.
+
+### Stage 23 — File shaping
+**Tools:** `truncate`, `paste`
+
+**Test:**
+- `truncate` shrinks or grows a file to the requested size.
+- `paste` merges two files line-by-line with tab separators.
+
+Status: done.
+
 ---
 
 ## Next coreutils candidates (low-risk order)
 
 1. `chown` (numeric uid:gid, single file)
-2. `sleep` (integer seconds)
-3. `basename`
-4. `dirname`
-5. `uname`
-6. `id`
-7. `mktemp`
-8. `truncate`
-9. `paste`
+2. `id`
+3. `mktemp`

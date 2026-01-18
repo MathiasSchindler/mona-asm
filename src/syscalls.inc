@@ -23,6 +23,7 @@
 .equ SYS_fork, 57
 .equ SYS_execve, 59
 .equ SYS_wait4, 61
+.equ SYS_ftruncate, 77
 
 .global sys_exit
 .global sys_write
@@ -47,6 +48,7 @@
 .global sys_fork
 .global sys_execve
 .global sys_wait4
+.global sys_ftruncate
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -160,5 +162,10 @@ sys_execve:
 
 sys_wait4:
     mov $SYS_wait4, %rax
+    syscall
+    ret
+
+sys_ftruncate:
+    mov $SYS_ftruncate, %rax
     syscall
     ret

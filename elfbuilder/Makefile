@@ -92,6 +92,10 @@ test: all
 	$(BUILD)/ld64 $(BUILD)/tools/dirname.mobj -o $(BUILD)/tools/dirname
 	$(BUILD)/as64 ../src/uname.s -o $(BUILD)/tools/uname.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/uname.mobj -o $(BUILD)/tools/uname
+	$(BUILD)/as64 ../src/truncate.s -o $(BUILD)/tools/truncate.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/truncate.mobj -o $(BUILD)/tools/truncate
+	$(BUILD)/as64 ../src/paste.s -o $(BUILD)/tools/paste.mobj
+	$(BUILD)/ld64 $(BUILD)/tools/paste.mobj -o $(BUILD)/tools/paste
 	$(BUILD)/as64 ../src/shell.s -o $(BUILD)/tools/shell.mobj
 	$(BUILD)/ld64 $(BUILD)/tools/shell.mobj -o $(BUILD)/tools/shell
 
