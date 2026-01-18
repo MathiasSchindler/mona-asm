@@ -24,6 +24,8 @@
 .equ SYS_execve, 59
 .equ SYS_wait4, 61
 .equ SYS_ftruncate, 77
+.equ SYS_pipe, 22
+.equ SYS_dup2, 33
 
 .global sys_exit
 .global sys_write
@@ -49,6 +51,8 @@
 .global sys_execve
 .global sys_wait4
 .global sys_ftruncate
+.global sys_pipe
+.global sys_dup2
 
 sys_exit:
     mov $SYS_exit, %rax
@@ -167,5 +171,15 @@ sys_wait4:
 
 sys_ftruncate:
     mov $SYS_ftruncate, %rax
+    syscall
+    ret
+
+sys_pipe:
+    mov $SYS_pipe, %rax
+    syscall
+    ret
+
+sys_dup2:
+    mov $SYS_dup2, %rax
     syscall
     ret
