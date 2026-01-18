@@ -58,7 +58,7 @@ _start:
 
     lea numbuf(%rip), %rsi
     mov %rsi, %rbx
-    mov $0, %rdi
+    xor %edi, %edi
     call util_utoa
     movb $0, (%rbx,%rax,1)
     mov %rbx, %rdi

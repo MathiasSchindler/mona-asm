@@ -14,7 +14,7 @@
 .include "utils.inc"
 
 _start:
-    mov $0, %rdi
+    xor %edi, %edi
     lea .L_timespec(%rip), %rsi
     call sys_clock_gettime
     test %rax, %rax

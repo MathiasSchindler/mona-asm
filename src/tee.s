@@ -48,7 +48,7 @@ _start:
 
 .L_open_done:
 .L_read:
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_buf(%rip), %rsi
     mov $4096, %rdx
     call sys_read

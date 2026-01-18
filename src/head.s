@@ -47,7 +47,7 @@ _start:
 
     mov %rax, %rbx
     xor %rcx, %rcx
-    mov $0, %r11b
+    xor %r11b, %r11b
     mov %rbx, %r10
     lea .L_buf(%rip), %r9
 

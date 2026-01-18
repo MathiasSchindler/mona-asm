@@ -57,7 +57,7 @@ _start:
     test %r13d, %r13d
     jle .L_usage
 
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_buf(%rip), %rsi
     mov $8192, %rdx
     call sys_read

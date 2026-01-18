@@ -44,7 +44,7 @@ _start:
     mov $2, %rdx
     call sys_write
 
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_buf(%rip), %rsi
     mov $256, %rdx
     call sys_read
@@ -331,7 +331,7 @@ _start:
     cmp $-1, %r12d
     je .L_child_in_file
     mov %r12d, %edi
-    mov $0, %esi
+    xor %esi, %esi
     call sys_dup2
     mov %r12d, %edi
     call sys_close
@@ -347,7 +347,7 @@ _start:
     test %rax, %rax
     js .L_spawn_fail
     mov %rax, %rdi
-    mov $0, %rsi
+    xor %esi, %esi
     call sys_dup2
     mov %rax, %rdi
     call sys_close

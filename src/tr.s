@@ -47,7 +47,7 @@ _start:
 
 .L_process:
 .L_read:
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_inbuf(%rip), %rsi
     mov $4096, %rdx
     call sys_read

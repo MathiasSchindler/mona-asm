@@ -10,7 +10,7 @@
 
 _start:
 .L_read:
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_inbuf(%rip), %rsi
     mov $2048, %rdx
     call sys_read

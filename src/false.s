@@ -4,6 +4,7 @@
 .equ SYS_exit, 60
 
 _start:
-    mov $1, %edi
+    xor %edi, %edi
+    inc %edi
     mov $SYS_exit, %eax
     syscall

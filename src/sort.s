@@ -12,7 +12,7 @@
 .include "utils.inc"
 
 _start:
-    mov $0, %edi
+    xor %edi, %edi
     lea .L_buf(%rip), %rsi
     mov $8192, %rdx
     call sys_read
